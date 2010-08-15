@@ -1,6 +1,3 @@
-from PMS import *
-from PMS.Objects import *
-from PMS.Shortcuts import *
 import re
 
 ###################################################################################################
@@ -178,7 +175,8 @@ def GetYtVideos(feedUrl, loopNext=True, startIndex=1, maxResults=50):
 
 def YtPlayVideo(sender, videoId):
   ytPage = HTTP.Request(YT_VIDEO_PAGE % videoId, cacheTime=1)
-
+  
+  ytPage = str(ytPage)
   t = re.findall('&t=([^&]+)', ytPage)[0]
   fmt_list = re.findall('&fmt_list=([^&]+)', ytPage)[0]
   fmt_list = String.Unquote(fmt_list, usePlus=False)
@@ -188,7 +186,7 @@ def YtPlayVideo(sender, videoId):
   if YT_FMT[index] in fmts:
     fmt = YT_FMT[index]
   else:
-    for i in reversed( range(0, index+1) ):
+    for i in range(index, -1, -1):
       if str(YT_FMT[i]) in fmts:
         fmt = YT_FMT[i]
         break
@@ -202,7 +200,7 @@ def YtPlayVideo(sender, videoId):
 ###################################################################################################
 
 def GetThumb(url):
-  data = HTTP.Request(url, cacheTime=CACHE_1MONTH)
+  data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
   if data:
     return DataObject(data, 'image/jpeg')
   else:
