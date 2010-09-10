@@ -1,3 +1,4 @@
+from PMS import *
 import re
 
 ###################################################################################################
@@ -9,7 +10,7 @@ YT_USER                    = 'AVForumsTV'
 YT_API_UPLOADS             = 'http://gdata.youtube.com/feeds/api/users/%s/uploads?orderby=published&start-index=%%d&max-results=%%d&v=2'
 YT_API_PLAYLISTS           = 'http://gdata.youtube.com/feeds/api/users/%s/playlists?start-index=%d&max-results=%d&v=2'
 YT_API_PLAYLIST            = 'http://gdata.youtube.com/feeds/api/playlists/%s?start-index=%%d&max-results=%%d&v=2'
-YT_API_SEARCH              = 'http://gdata.youtube.com/feeds/api/videos?q=%s&author=%s&orderby=relevance&start-index%%d&max-results=%%d&v=2'
+YT_SEARCH_USER_VIDEOS      = 'http://gdata.youtube.com/feeds/api/videos?q=%s&author=%s&orderby=relevance&start-index%%d&max-results=%%d&v=2'
 
 YT_VIDEO_PAGE              = 'http://www.youtube.com/watch?v=%s'
 YT_GET_VIDEO_URL           = 'http://www.youtube.com/get_video?video_id=%s&t=%s&fmt=%d&asv=3'
@@ -17,7 +18,7 @@ YT_GET_VIDEO_URL           = 'http://www.youtube.com/get_video?video_id=%s&t=%s&
 # Namespaces
 YT_NS                      = {'atom':'http://www.w3.org/2005/Atom','app':'http://www.w3.org/2007/app', 'openSearch':'http://a9.com/-/spec/opensearch/1.1/', 'gd':'http://schemas.google.com/g/2005', 'yt':'http://gdata.youtube.com/schemas/2007', 'media':'http://search.yahoo.com/mrss/'}
 
-YT_VIDEO_FORMATS           = [L('STANDARD'), L('MEDIUM'), L('HIGH'), L('HD720P'), L('HD1080P')]
+YT_VIDEO_FORMATS           = ['Standard', 'Medium', 'High', '720p', '1080p']
 YT_FMT                     = [34, 18, 35, 22, 37]
 
 # Default artwork and icon(s)
@@ -46,17 +47,12 @@ def Start():
 
 ###################################################################################################
 
-def CreatePrefs():
-  Prefs.Add(id='ytfmt', type='enum', default=YT_VIDEO_FORMATS[-1], label=L('YTMAXQUALITY'), values=YT_VIDEO_FORMATS)
-
-###################################################################################################
-
 def MainMenu():
   dir = MediaContainer(viewGroup='_List')
-  dir.Append(Function(DirectoryItem(YtUploads, title=L('UPLOADS'), thumb=R(PLUGIN_ICON_DEFAULT))))
-  dir.Append(Function(DirectoryItem(YtPlaylists, title=L('PLAYLISTS'), thumb=R(PLUGIN_ICON_DEFAULT))))
-  dir.Append(Function(InputDirectoryItem(YtVideoSearch, title=L('SEARCH'), prompt=L('SEARCH'), thumb=R(PLUGIN_ICON_SEARCH))))
-  dir.Append(PrefsItem(L('PREFERENCES'), thumb=R(PLUGIN_ICON_PREFS)))
+  dir.Append(Function(DirectoryItem(YtUploads, title='Uploads', thumb=R(PLUGIN_ICON_DEFAULT))))
+  dir.Append(Function(DirectoryItem(YtPlaylists, title='Playlists', thumb=R(PLUGIN_ICON_DEFAULT))))
+  dir.Append(Function(InputDirectoryItem(YtVideoSearch, title='Search', prompt='Search', thumb=R(PLUGIN_ICON_SEARCH))))
+  dir.Append(PrefsItem('Preferences', thumb=R(PLUGIN_ICON_PREFS)))
   return dir
 
 ###################################################################################################
@@ -67,7 +63,7 @@ def YtUploads(sender):
 
   for v in videos:
     title, summary, thumb, duration, date, videoId, rating, views = v
-    dir.Append(Function(VideoItem(YtPlayVideo, title=title, subtitle=date + ' - ' + views + ' ' + L('VIEWS'), summary=summary, rating=rating, duration=int(duration)*1000, thumb=Function(GetThumb, url=thumb)), videoId=videoId))
+    dir.Append(Function(VideoItem(YtPlayVideo, title=title, subtitle=date + ' - ' + views + ' views', summary=summary, rating=rating, duration=int(duration)*1000, thumb=Function(GetThumb, url=thumb)), videoId=videoId))
 
   return dir
 
@@ -79,7 +75,7 @@ def YtPlaylists(sender):
 
   for p in playlists:
     title, summary, count, playlistId = p
-    dir.Append(Function(DirectoryItem(YtPlaylist, title=title, summary=summary, infoLabel=str(count) + ' ' + L('VIDEOS'), thumb=R(PLUGIN_ICON_DEFAULT)), playlistId=playlistId))
+    dir.Append(Function(DirectoryItem(YtPlaylist, title=title, summary=summary, infoLabel=str(count), thumb=R(PLUGIN_ICON_DEFAULT)), playlistId=playlistId))
 
   return dir
 
@@ -109,11 +105,11 @@ def GetYtPlaylists(ytUser, startIndex=1, maxResults=50):
 
 def YtPlaylist(sender, playlistId):
   dir = MediaContainer(title2=sender.itemTitle)
-  videos = GetYtVideos(YT_API_PLAYLIST % playlistId)
+  videos = GetYtVideos( YT_API_PLAYLIST % playlistId )
 
   for v in videos:
     title, summary, thumb, duration, date, videoId, rating, views = v
-    dir.Append(Function(VideoItem(YtPlayVideo, title=title, subtitle=date + ' - ' + views + ' ' + L('VIEWS'), summary=summary, rating=rating, duration=int(duration)*1000, thumb=Function(GetThumb, url=thumb)), videoId=videoId))
+    dir.Append(Function(VideoItem(YtPlayVideo, title=title, subtitle=date + ' - ' + views + ' views', summary=summary, rating=rating, duration=int(duration)*1000, thumb=Function(GetThumb, url=thumb)), videoId=videoId))
 
   return dir
 
@@ -121,11 +117,11 @@ def YtPlaylist(sender, playlistId):
 
 def YtVideoSearch(sender, query):
   dir = MediaContainer(title2=sender.itemTitle)
-  videos = GetYtVideos( YT_API_SEARCH % (String.Quote(query, usePlus=True), YT_USER), loopNext=False, maxResults=20 )
+  videos = GetYtVideos( YT_SEARCH_USER_VIDEOS % (String.Quote(query, usePlus=True), YT_USER), loopNext=False, maxResults=20 )
 
   for v in videos:
     title, summary, thumb, duration, date, videoId, rating, views = v
-    dir.Append(Function(VideoItem(YtPlayVideo, title=title, subtitle=date + ' - ' + views + ' ' + L('VIEWS'), summary=summary, rating=rating, duration=int(duration)*1000, thumb=Function(GetThumb, url=thumb)), videoId=videoId))
+    dir.Append(Function(VideoItem(YtPlayVideo, title=title, subtitle=date + ' - ' + views + ' views', summary=summary, rating=rating, duration=int(duration)*1000, thumb=Function(GetThumb, url=thumb)), videoId=videoId))
 
   return dir
 
@@ -175,8 +171,7 @@ def GetYtVideos(feedUrl, loopNext=True, startIndex=1, maxResults=50):
 
 def YtPlayVideo(sender, videoId):
   ytPage = HTTP.Request(YT_VIDEO_PAGE % videoId, cacheTime=1)
-  
-  ytPage = str(ytPage)
+
   t = re.findall('&t=([^&]+)', ytPage)[0]
   fmt_list = re.findall('&fmt_list=([^&]+)', ytPage)[0]
   fmt_list = String.Unquote(fmt_list, usePlus=False)
@@ -186,7 +181,7 @@ def YtPlayVideo(sender, videoId):
   if YT_FMT[index] in fmts:
     fmt = YT_FMT[index]
   else:
-    for i in range(index, -1, -1):
+    for i in reversed( range(0, index+1) ):
       if str(YT_FMT[i]) in fmts:
         fmt = YT_FMT[i]
         break
@@ -194,14 +189,14 @@ def YtPlayVideo(sender, videoId):
         fmt = 5
 
   url = YT_GET_VIDEO_URL % (videoId, t, fmt)
-#  Log(url)
+  #Log('YouTube video URL --> ' + url)
   return Redirect(url)
 
 ###################################################################################################
 
 def GetThumb(url):
-  data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
-  if data:
+  try:
+    data = HTTP.Request(url, cacheTime=CACHE_1MONTH)
     return DataObject(data, 'image/jpeg')
-  else:
+  except:
     return Redirect(R(PLUGIN_ICON_DEFAULT))
