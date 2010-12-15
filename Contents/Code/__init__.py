@@ -1,4 +1,3 @@
-from PMS import *
 import re
 
 ###################################################################################################
@@ -11,18 +10,13 @@ YT_API_UPLOADS             = 'http://gdata.youtube.com/feeds/api/users/%s/upload
 YT_API_PLAYLISTS           = 'http://gdata.youtube.com/feeds/api/users/%s/playlists?start-index=%d&max-results=%d&v=2'
 YT_API_PLAYLIST            = 'http://gdata.youtube.com/feeds/api/playlists/%s?start-index=%%d&max-results=%%d&v=2'
 YT_SEARCH_USER_VIDEOS      = 'http://gdata.youtube.com/feeds/api/videos?q=%s&author=%s&orderby=relevance&start-index%%d&max-results=%%d&v=2'
-
-YT_VIDEO_PAGE              = 'http://www.youtube.com/watch?v=%s'
-YT_GET_VIDEO_URL           = 'http://www.youtube.com/get_video?video_id=%s&t=%s&fmt=%d&asv=3'
-
-# Namespaces
 YT_NS                      = {'atom':'http://www.w3.org/2005/Atom','app':'http://www.w3.org/2007/app', 'openSearch':'http://a9.com/-/spec/opensearch/1.1/', 'gd':'http://schemas.google.com/g/2005', 'yt':'http://gdata.youtube.com/schemas/2007', 'media':'http://search.yahoo.com/mrss/'}
-
+YT_VIDEO_PAGE              = 'http://www.youtube.com/watch?v=%s'
 YT_VIDEO_FORMATS           = ['Standard', 'Medium', 'High', '720p', '1080p']
 YT_FMT                     = [34, 18, 35, 22, 37]
 
 # Default artwork and icon(s)
-PLUGIN_ARTWORK             = 'art-default.png'
+PLUGIN_ARTWORK             = 'art-default.jpg'
 PLUGIN_ICON_DEFAULT        = 'icon-default.png'
 PLUGIN_ICON_SEARCH         = 'icon-search.png'
 PLUGIN_ICON_PREFS          = 'icon-prefs.png'
@@ -32,23 +26,23 @@ PLUGIN_ICON_PREFS          = 'icon-prefs.png'
 def Start():
   Plugin.AddPrefixHandler(PLUGIN_PREFIX, MainMenu, PLUGIN_TITLE, PLUGIN_ICON_DEFAULT, PLUGIN_ARTWORK)
 
-  Plugin.AddViewGroup('_List', viewMode='List', mediaType='items')
-  Plugin.AddViewGroup('_InfoList', viewMode='InfoList', mediaType='items')
+  Plugin.AddViewGroup('List', viewMode='List', mediaType='items')
+  Plugin.AddViewGroup('InfoList', viewMode='InfoList', mediaType='items')
 
   # Set the default MediaContainer attributes
   MediaContainer.title1    = PLUGIN_TITLE
-  MediaContainer.viewGroup = '_InfoList'
+  MediaContainer.viewGroup = 'InfoList'
   MediaContainer.art       = R(PLUGIN_ARTWORK)
   MediaContainer.userAgent = ''
 
   # Set the default cache time
-  HTTP.SetCacheTime(CACHE_1HOUR)
-  HTTP.SetHeader('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2) Gecko/20100115 Firefox/3.6')
+  HTTP.CacheTime = CACHE_1HOUR
+  HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.2.12) Gecko/20101026 Firefox/3.6.12'
 
 ###################################################################################################
 
 def MainMenu():
-  dir = MediaContainer(viewGroup='_List')
+  dir = MediaContainer(viewGroup='List')
   dir.Append(Function(DirectoryItem(YtUploads, title='Uploads', thumb=R(PLUGIN_ICON_DEFAULT))))
   dir.Append(Function(DirectoryItem(YtPlaylists, title='Playlists', thumb=R(PLUGIN_ICON_DEFAULT))))
   dir.Append(Function(InputDirectoryItem(YtVideoSearch, title='Search', prompt='Search', thumb=R(PLUGIN_ICON_SEARCH))))
@@ -58,7 +52,7 @@ def MainMenu():
 ###################################################################################################
 
 def YtUploads(sender):
-  dir = MediaContainer(title2=sender.itemTitle)
+  dir = MediaContainer(title2=sender.itemTitle, httpCookies=HTTP.GetCookiesForURL('http://www.youtube.com'))
   videos = GetYtVideos(YT_API_UPLOADS % (YT_USER), loopNext=False)
 
   for v in videos:
@@ -104,7 +98,7 @@ def GetYtPlaylists(ytUser, startIndex=1, maxResults=50):
 ###################################################################################################
 
 def YtPlaylist(sender, playlistId):
-  dir = MediaContainer(title2=sender.itemTitle)
+  dir = MediaContainer(title2=sender.itemTitle, httpCookies=HTTP.GetCookiesForURL('http://www.youtube.com'))
   videos = GetYtVideos( YT_API_PLAYLIST % playlistId )
 
   for v in videos:
@@ -116,7 +110,7 @@ def YtPlaylist(sender, playlistId):
 ###################################################################################################
 
 def YtVideoSearch(sender, query):
-  dir = MediaContainer(title2=sender.itemTitle)
+  dir = MediaContainer(title2=sender.itemTitle, httpCookies=HTTP.GetCookiesForURL('http://www.youtube.com'))
   videos = GetYtVideos( YT_SEARCH_USER_VIDEOS % (String.Quote(query, usePlus=True), YT_USER), loopNext=False, maxResults=20 )
 
   for v in videos:
@@ -170,14 +164,20 @@ def GetYtVideos(feedUrl, loopNext=True, startIndex=1, maxResults=50):
 ###################################################################################################
 
 def YtPlayVideo(sender, videoId):
-  ytPage = HTTP.Request(YT_VIDEO_PAGE % videoId, cacheTime=1)
+  yt_page = HTTP.Request(YT_VIDEO_PAGE % (videoId), cacheTime=1).content
 
-  t = re.findall('&t=([^&]+)', ytPage)[0]
-  fmt_list = re.findall('&fmt_list=([^&]+)', ytPage)[0]
-  fmt_list = String.Unquote(fmt_list, usePlus=False)
-  fmts = re.findall('([0-9]+)[^,]*', fmt_list)
+  fmt_url_map = re.findall('"fmt_url_map".+?"([^"]+)', yt_page)[0]
+  fmt_url_map = fmt_url_map.replace('\/', '/').split(',')
 
-  index = YT_VIDEO_FORMATS.index( Prefs.Get('ytfmt') )
+  fmts = []
+  fmts_info = {}
+
+  for f in fmt_url_map:
+    (fmt, url) = f.split('|')
+    fmts.append(fmt)
+    fmts_info[str(fmt)] = url
+
+  index = YT_VIDEO_FORMATS.index(Prefs['youtube_fmt'])
   if YT_FMT[index] in fmts:
     fmt = YT_FMT[index]
   else:
@@ -188,15 +188,14 @@ def YtPlayVideo(sender, videoId):
       else:
         fmt = 5
 
-  url = YT_GET_VIDEO_URL % (videoId, t, fmt)
-  #Log('YouTube video URL --> ' + url)
+  url = fmts_info[str(fmt)]
   return Redirect(url)
 
 ###################################################################################################
 
 def GetThumb(url):
   try:
-    data = HTTP.Request(url, cacheTime=CACHE_1MONTH)
+    data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
     return DataObject(data, 'image/jpeg')
   except:
     return Redirect(R(PLUGIN_ICON_DEFAULT))
