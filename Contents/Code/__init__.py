@@ -71,7 +71,10 @@ def YtPlaylists(sender):
     title, summary, count, playlistId = p
     dir.Append(Function(DirectoryItem(YtPlaylist, title=title, summary=summary, infoLabel=str(count), thumb=R(PLUGIN_ICON_DEFAULT)), playlistId=playlistId))
 
-  return dir
+  if len(dir) == 0:
+    return MessageContainer('Empty', 'Nothing found')
+  else:
+    return dir
 
 ###################################################################################################
 
