@@ -71,10 +71,7 @@ def YtPlaylists(sender):
     title, summary, count, playlistId = p
     dir.Append(Function(DirectoryItem(YtPlaylist, title=title, summary=summary, infoLabel=str(count), thumb=R(PLUGIN_ICON_DEFAULT)), playlistId=playlistId))
 
-  if len(dir) == 0:
-    return MessageContainer('Empty', 'Nothing found')
-  else:
-    return dir
+  return dir
 
 ###################################################################################################
 
@@ -120,7 +117,10 @@ def YtVideoSearch(sender, query):
     title, summary, thumb, duration, date, videoId, rating, views = v
     dir.Append(Function(VideoItem(YtPlayVideo, title=title, subtitle=date + ' - ' + views + ' views', summary=summary, rating=rating, duration=int(duration)*1000, thumb=Function(GetThumb, url=thumb)), videoId=videoId))
 
-  return dir
+  if len(dir) == 0:
+    return MessageContainer('Empty', 'Nothing found')
+  else:
+    return dir
 
 ###################################################################################################
 
