@@ -1,5 +1,3 @@
-import re
-
 NAME = 'AVForums'
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
@@ -24,7 +22,7 @@ def Start():
 	DirectoryObject.thumb = R(ICON)
 
 	HTTP.CacheTime = CACHE_1HOUR
-	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:9.0.1) Gecko/20100101 Firefox/9.0.1'
+	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:13.0) Gecko/20100101 Firefox/13.0.1'
 
 ###################################################################################################
 def MainMenu():
@@ -59,6 +57,7 @@ def Uploads():
 
 ###################################################################################################
 def Playlists():
+
 	oc = ObjectContainer(title2='Playlists')
 	url = YT_API_PLAYLISTS % YT_USER
 
@@ -146,6 +145,7 @@ def GetVideos(url, loop_next=True, start_index=1, max_results=50):
 
 ###################################################################################################
 def GetThumb(url):
+
 	try:
 		data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
 		return DataObject(data, 'image/jpeg')
