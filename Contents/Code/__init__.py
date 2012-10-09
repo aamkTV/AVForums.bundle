@@ -22,14 +22,14 @@ def Start():
 	DirectoryObject.thumb = R(ICON)
 
 	HTTP.CacheTime = CACHE_1HOUR
-	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:13.0) Gecko/20100101 Firefox/13.0.1'
+	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:15.0) Gecko/20100101 Firefox/15.0.1'
 
 ###################################################################################################
 def MainMenu():
 
 	oc = ObjectContainer(view_group='List')
 
-	oc.add(DirectoryObject(key=Callback(Uploads), title='Uploads'))
+	oc.add(DirectoryObject(key=Callback(Uploads), title='Videos'))
 	oc.add(DirectoryObject(key=Callback(Playlists), title='Playlists'))
 
 	return oc
@@ -37,7 +37,7 @@ def MainMenu():
 ###################################################################################################
 def Uploads():
 
-	oc = ObjectContainer(title2='Uploads', http_cookies=HTTP.CookiesForURL('http://www.youtube.com/'))
+	oc = ObjectContainer(title2='Videos', http_cookies=HTTP.CookiesForURL('http://www.youtube.com/'))
 	url = YT_API_UPLOADS % YT_USER
 
 	for video in GetVideos(url, loop_next=False):
