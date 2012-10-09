@@ -149,5 +149,5 @@ def GetThumb(url):
 	try:
 		data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
 		return DataObject(data, 'image/jpeg')
- 	except:
+	except:
 		return Redirect(R(ICON))
