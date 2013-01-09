@@ -37,7 +37,7 @@ def MainMenu():
 ###################################################################################################
 def Uploads():
 
-	oc = ObjectContainer(title2='Videos', http_cookies=HTTP.CookiesForURL('http://www.youtube.com/'))
+	oc = ObjectContainer(title2='Videos')
 	url = YT_API_UPLOADS % YT_USER
 
 	for video in GetVideos(url, loop_next=False):
@@ -92,7 +92,7 @@ def GetPlaylists(url, start_index=1, max_results=50):
 ###################################################################################################
 def Playlist(playlist_id, title):
 
-	oc = ObjectContainer(title2=title, http_cookies=HTTP.CookiesForURL('http://www.youtube.com/'))
+	oc = ObjectContainer(title2=title)
 	url = YT_API_PLAYLIST % playlist_id
 
 	for video in GetVideos(url):
