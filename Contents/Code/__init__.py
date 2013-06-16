@@ -1,6 +1,4 @@
 NAME = 'AVForums'
-ART = 'art-default.jpg'
-ICON = 'icon-default.png'
 YT_USER = 'AVForumsTV'
 
 YT_API_UPLOADS   = 'http://gdata.youtube.com/feeds/api/users/%s/uploads?orderby=published&start-index=%%d&max-results=%%d&v=2&alt=json'
@@ -12,14 +10,12 @@ YT_VIDEO_PAGE    = 'http://www.youtube.com/watch?v=%s'
 ###################################################################################################
 def Start():
 
-	Plugin.AddPrefixHandler('/video/avforums', MainMenu, NAME, ICON, ART)
+	Plugin.AddPrefixHandler('/video/avforums', MainMenu, NAME)
 	Plugin.AddViewGroup('List', viewMode='List', mediaType='items')
 	Plugin.AddViewGroup('InfoList', viewMode='InfoList', mediaType='items')
 
-	ObjectContainer.art = R(ART)
 	ObjectContainer.title1 = NAME
 	ObjectContainer.view_group = 'InfoList'
-	DirectoryObject.thumb = R(ICON)
 
 	HTTP.CacheTime = CACHE_1HOUR
 	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:15.0) Gecko/20100101 Firefox/15.0.1'
@@ -50,7 +46,7 @@ def Uploads():
 			originally_available_at = originally_available_at,
 			duration = duration,
 			rating= rating,
-			thumb = Callback(GetThumb, url=thumb)
+			thumb = Resource.ContentsOfURLWithFallback(thumb)
 		))
 
 	return oc
@@ -105,7 +101,7 @@ def Playlist(playlist_id, title):
 			originally_available_at = originally_available_at,
 			duration = duration,
 			rating= rating,
-			thumb = Callback(GetThumb, url=thumb)
+			thumb = Resource.ContentsOfURLWithFallback(thumb)
 		))
 
 	return oc
@@ -142,12 +138,3 @@ def GetVideos(url, loop_next=True, start_index=1, max_results=50):
 					videos.extend( GetVideos(url, start_index = start_index + max_results) )
 
 	return videos
-
-###################################################################################################
-def GetThumb(url):
-
-	try:
-		data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
-		return DataObject(data, 'image/jpeg')
-	except:
-		return Redirect(R(ICON))
